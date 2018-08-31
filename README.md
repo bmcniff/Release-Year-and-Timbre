@@ -1,13 +1,13 @@
 About the Data
 --------------
 
-The data set in use is the **Million Song Dataset** available at <https://labrosa.ee.columbia.edu/millionsong/>. This dataset includes various pieces of information including lyrics, musical data, genre labels, tags, user data, etc. for one million contemporary songs.
+The data set in use is the **Million Song Dataset** available at <https://labrosa.ee.columbia.edu/millionsong/>. 
+
+This dataset includes various pieces of information including lyrics, musical data, genre labels, tags, user data, etc. for one million contemporary songs.
 
 This dataset ranges from the 1920's to 2011, with release years very heavily skewed to the left, due to the increase in music recordings over time.) This data weighs in at 280GB, more than double the capacity of my hard drive. For this reason, I opted for a subset of the data, providing 500,000 records with 90 variables specifying timbre (pitch and intensity) characteristics. This dataset is about 200MB - much more reasonable. However my computer was still unhappy. I took a further subset of this data (3,000 records, 90 variables) which left me with a very manageable 2.5MB.
 
-Additionally, I added column names to each variable, creatively named "Variable1" through "Variable90"
-
-Once I selected my database, I dove into some exploratory analysis.
+Additionally, I added column names to each variable, creatively named "Variable1" through "Variable90" Once I selected my database, I dove into some exploratory analysis.
 
 Wait, not yet...
 
