@@ -1,0 +1,149 @@
+---
+title: "Can You Predict the Release Year of a Song Based on Timbre?"
+author: "Brian McNiff"
+date: "August 31, 2018"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+# install packages
+install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+install.packages("rpart", repos = "http://cran.us.r-project.org")
+install.packages("modelr", repos = "http://cran.us.r-project.org")
+install.packages("randomForest", repos = "http://cran.us.r-project.org")
+```
+
+## About the Data
+
+The data set in use is the **Million Song Dataset** available at <https://labrosa.ee.columbia.edu/millionsong/>. This dataset includes various pieces of information including lyrics, musical data, genre labels, tags, user data, etc. for one million contemporary songs.
+
+This dataset ranges from the 1920's to 2011, with release years very heavily skewed to the left, due to the increase in music recordings over time.) This data weighs in at 280GB, more than double the capacity of my hard drive. For this reason, I opted for a subset of the data, providing 500,000 records with 90 variables specifying timbre (pitch and intensity) characteristics. This dataset is about 200MB - much more reasonable. However my computer was still unhappy. I took a further subset of this data (3,000 records, 90 variables) which left me with a very manageable 2.5MB.
+
+Additionally, I added column names to each variable, creatively named "Variable1" through "Variable90"
+
+Once I selected my database, I dove into some exploratory analysis.
+
+Wait, not yet... 
+
+##What is timbre? 
+
+Timbre (pronounced "tamber") is a way to describe sound based on its pitch, volume, and quality. In a lot of ways timbre is similar to tone.
+
+Timbre is a fairly abstract concept so this is difficult to measure mathematically. The timbre data from this dataset was calculated using a 12-dimensional vector. This means that even the data is incredibly abstract and difficult for a human being to interpret.
+
+##Exploring the Data
+
+Okay, exploratory analysis time. The first two things I did were view a summary of the data, and list all column names to ensure data was imported correctly. For visibility's sake, I am displaying jus the first 6 variables in this writeup. Considering the data is so abstract to begin with, it is difficult to discern any patterns based on summary statistics alone.
+
+The next thing I did was to create correlation matrix of all available data and export it to a CSV file for easy viewing. I chose the 6 variables that appeared to have the strongest relationship to Year (Variable1, Variable6, Variable73, Variable38, Variable36, Variable67).
+
+```{r 1, message=FALSE, warning=FALSE}
+
+# load in the tidyverse package
+library(tidyverse)
+
+# read data
+library(readxl)
+music_data <- read_excel("music_data.xlsx")
+
+# examining data
+summary(music_data[,c(1:6)])
+
+# loading in rpart package
+library(rpart)
+
+# listing column names
+names(music_data[,c(1:6)])
+
+cor_data <- cor(music_data)
+```
+
+## Model Making - Decision Tree
+
+I chose to give decision trees a shot at first, to see how they would fair. Decision tree was the first model I learned about and I still think the most intuitive to visualize.
+
+```{r 2}
+#creating new model
+fit <- rpart(Year ~ Variable1 + Variable6 + Variable73 + Variable38 + Variable36 + Variable67, data = music_data)
+```
+
+## Evaluating the Decision Tree
+
+Here, I printed the first 6 records, their predictions, and the actual year each song was released.
+
+This seemed pretty good, almost suspiciously good, considering how simple this model is.
+
+I then calculated the Mean Absolute Error. The MAE essentially tells you "On average, your guesses are ____ years off from the real value."
+
+In this case, it was about 7 years off.
+
+```{r 3, echo = FALSE}
+#evaluating new model
+print("Making predictions for:")
+print(head(music_data))
+
+print("Predictions are")
+print(predict(fit, head(music_data)))
+
+print("Actual year is")
+print(head(music_data$Year))
+
+print("The MAE is")
+library(modelr)
+print(mae(model = fit, data = music_data))
+```
+
+## Evaluating Mean Absolute Error
+
+I was also curious about how including more branches in the decision tree would effect the results. This function displays how the MAE is affected by different numbers of branches. As displayed in the results, a max depth of 3 appears to be ideal.
+
+```{r 4}
+# function created to get the maximum average error for a given max depth.
+get_mae <- function(maxdepth, target, predictors, training_data, testing_data){
+  
+  predictors <- paste(predictors, collapse="+")
+  formula <- as.formula(paste(target,"~",predictors,sep = ""))
+  
+  model <- rpart(formula, data = training_data,
+                 control = rpart.control(maxdepth = maxdepth))
+  
+  mae <- mae(model, testing_data)
+  return(mae)
+}
+
+# finding maxdepth that leads to the lowest mean average error for this dataset
+splitData <- resample_partition(music_data, c(test = 0.3, train = 0.7))
+
+target <- "Year"
+predictors <-  c("Variable1", "Variable6", "Variable73", "Variable38", "Variable36", "Variable67")
+
+for(i in 1:10){
+  mae <- get_mae(maxdepth = i, target = target, predictors = predictors,
+                 training_data = splitData$train, testing_data = splitData$test)
+  print(glue::glue("Maxdepth: ",i,"\t MAE: ",mae))
+}
+```
+
+## Random Forest Experimentation
+
+Out of curiousity, I also wanted to try using a random forest model. I assumed this would provide a slightly more accurate prediction, and this ended up being the case.
+
+```{r 5}
+# read in the library we'll use for random forests
+library(randomForest)
+
+# training random forest model to compare
+fitRandomForest <- randomForest(Year ~ Variable1 + Variable6 + Variable73 + Variable38 + Variable36 + Variable67, data = splitData$train)
+
+# compute MAE
+print("MAE is")
+mae(model = fitRandomForest, data = splitData$test)
+```
+
+## Final Thoughts
+
+While the predictions seem to be close to the actual value, I'm skeptical that this may be due to most of the records being released in the early 2000's. I'm curious to see how well it may predict a song from the 20's or 30's. While there is less data to go on for these older decades, they will also have a more distinct sound, which may make it easier.
+
+Another question brought to my attention during this process is how the model might handle a song which relies on sampling (perhaps of old records). Will these songs throw it off?
+
+I'm leaving these points open for future experimentation.
