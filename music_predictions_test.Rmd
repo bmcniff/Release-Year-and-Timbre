@@ -25,13 +25,13 @@ Once I selected my database, I dove into some exploratory analysis.
 
 Wait, not yet... 
 
-##What is timbre? 
+## What is timbre? 
 
 Timbre (pronounced "tamber") is a way to describe sound based on its pitch, volume, and quality. In a lot of ways timbre is similar to tone.
 
 Timbre is a fairly abstract concept so this is difficult to measure mathematically. The timbre data from this dataset was calculated using a 12-dimensional vector. This means that even the data is incredibly abstract and difficult for a human being to interpret.
 
-##Exploring the Data
+## Exploring the Data
 
 Okay, exploratory analysis time. The first two things I did were view a summary of the data, and list all column names to ensure data was imported correctly. For visibility's sake, I am displaying jus the first 6 variables in this writeup. Considering the data is so abstract to begin with, it is difficult to discern any patterns based on summary statistics alone.
 
